@@ -124,7 +124,7 @@ data "aws_iam_policy_document" "resource" {
 }
 
 module "label" {
-  source     = "git::https://github.com/cloudposse/terraform-null-label.git?ref=tags/0.3.1"
+  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.5.4"
   namespace  = "${var.namespace}"
   stage      = "${var.stage}"
   name       = "${var.name}"
@@ -191,24 +191,17 @@ resource "aws_iam_instance_profile" "default" {
   role  = "${aws_iam_role.default.name}"
 }
 
+### tnx https://github.com/doingcloudright/terraform-aws-ecr-cross-account.git
+data "template_file" "lifecycle_policy_rules" {
+  count = "${var.lifecycle_policy_rules_count}"
+
+  template = "${replace( var.lifecycle_policy_rules[count.index], "priority:replace:this",( count.index + 1) )}"
+}
+
 resource "aws_ecr_lifecycle_policy" "default" {
   repository = "${aws_ecr_repository.default.name}"
 
-  policy = <<EOF
-{
-  "rules": [{
-    "rulePriority": 1,
-    "description": "Rotate images when reach ${var.max_image_count} images stored",
-    "selection": {
-      "tagStatus": "tagged",
-      "tagPrefixList": ["${var.stage}"],
-      "countType": "imageCountMoreThan",
-      "countNumber": ${var.max_image_count}
-    },
-    "action": {
-      "type": "expire"
-    }
-  }]
-}
-EOF
+  policy = "${replace("{\"rules\": [${join(",",data.template_file.lifecycle_policy_rules.*.rendered)}]}",
+		 "/\"(true|false|[[:digit:]]+)\"/", "$1"
+	)}"
 }

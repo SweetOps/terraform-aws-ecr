@@ -40,8 +40,12 @@ variable "tags" {
   description = "Additional tags (e.g. `map('BusinessUnit','XYZ')`)"
 }
 
-variable "max_image_count" {
-  type        = "string"
-  description = "How many Docker Image versions AWS ECR will store"
-  default     = "7"
+variable "lifecycle_policy_rules_count" {
+  description = "The amount of lifecycle_policy_rules, this to make sure we are not running into computed count problems"
+  default     = "0"
+}
+
+variable "lifecycle_policy_rules" {
+  description = "List of json lifecycle policy rules, created by another module: doingcloudright/ecr-lifecycle-policy-rule/aws"
+  default     = []
 }
